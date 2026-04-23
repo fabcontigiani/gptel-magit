@@ -98,6 +98,10 @@ See `gptel-backend` for documentation."
  :group 'gptel-magit)
 
 
+(defun gptel-magit--response-text (response)
+  "Return RESPONSE when it is plain text, otherwise nil."
+  (and (stringp response) response))
+
 (defun gptel-magit--format-commit-message (message)
   "Format commit message MESSAGE nicely."
   (with-temp-buffer
@@ -124,8 +128,9 @@ Invokes CALLBACK with the generated message when done."
       :system gptel-magit-commit-prompt
       :context nil
       :callback (lambda (response _info)
-                  (let ((msg (gptel-magit--format-commit-message response)))
-                    (funcall callback msg))))))
+                  (when-let ((text (gptel-magit--response-text response)))
+                    (let ((msg (gptel-magit--format-commit-message text)))
+                      (funcall callback msg)))))))
 
 (defun gptel-magit-generate-message ()
   "Generate a commit message when in the git commit buffer."
@@ -168,7 +173,8 @@ Uses ARGS from transient mode."
     :system gptel-magit-diff-explain-prompt
     :context nil
     :callback (lambda (response _info)
-                (gptel-magit--show-diff-explain response)))
+                (when (stringp response)
+                  (gptel-magit--show-diff-explain response))))
   (message "magit-gptel: Explaining diff..."))
 
 (defun gptel-magit-diff-explain ()
